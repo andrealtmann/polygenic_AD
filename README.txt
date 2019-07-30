@@ -11,9 +11,10 @@ Run following scripts
 diagnosis.R 		-> test association to clinical diagnosis
 csf_biomarker.R 	-> test association with CSF biomarker
 pet_amyloid-av45.R 	-> test association with regional amyloid burden  
-
+atrophy_bsi.R		-> test association with atrophy as quantified by BSI
 cog_decline.R		-> test association with longitudinal cognitive decline
 clinical_conversion.R	-> test association with clinical conversion (survival analysis)
+
 
 Enjoy!
 
