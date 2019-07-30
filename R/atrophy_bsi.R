@@ -6,10 +6,10 @@ require(lme4)
 
 ##settings for the linear mixed effects model
 #Only random intercept
-mc <- "(1 | RID)"
+#mc <- "(1 | RID)"
 
 #Random intercept and slope
-#mc <- "(1 + Years.bl | RID)"
+mc <- "(1 + Years.bl | RID)"
 
 ### begin BSI ###
 
