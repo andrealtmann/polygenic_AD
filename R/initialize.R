@@ -13,7 +13,8 @@ apoe.info2 <- merge(polygenic_scores, desikanlab, by="RID", all=F)
 
 #selected the name of the score to be used
 #(options: PHS, PRScs_auto, PRS1, PRS2)
-score.use <- "PHS"
+if (!exists("mkroc"))
+  score.use <- "PHS"
 
 #list the variables that are used as confounding variables
 confound <- paste(c("PTGENDER", "PTEDUCAT"),collapse=" + ")
@@ -21,7 +22,7 @@ confound <- paste(c("PTGENDER", "PTEDUCAT"),collapse=" + ")
 
 #this removes subjects who contributed to ADGC
 #(set to true if running AD-PRS based scores)
-exclude.adgc <- F
+exclude.adgc <- T
 
 #this removes subjects with Ashkenazi Jewish ancestry
 #they form an outlier group with PCA1 > 0.06, verified by SNPweights

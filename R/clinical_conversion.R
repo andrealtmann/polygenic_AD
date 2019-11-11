@@ -4,14 +4,16 @@ source("./initialize.R")
 
 ##settings
 
-
-
 ### begin conversion analysis ###
 rids <- unique(adnimerge$RID)
 target.dx <- "Dementia"
 
 n_subjects <- length(rids)
 n_update   <- floor(n_subjects/10)
+
+##for the machine learning bit:
+n_fold <- 10
+set.seed(31415)
 
 #extract time to dementia diagnosis
 if (!exists("timetoad")){
@@ -59,12 +61,17 @@ surv2.wn <- subset(surv2, subset=PTRACCAT=="White" & PTETHCAT=="Not Hisp/Latino"
 #exclude people with AD
 surv2.wnnd <- subset(surv2.wn, subset=DX.bl != "AD" & AGE2-AGE>0)
 
+cvset.wnnd  <- getCVfold(surv2.wnnd, n_fold)
+
+
 #typle of model:
 #left trunkated, right censored
-sv0 <- Surv(surv2.wnnd$AGE, surv2.wnnd$AGE2, surv2.wnnd$DEM)
+#sv0 <- Surv(surv2.wnnd$AGE, surv2.wnnd$AGE2, surv2.wnnd$DEM)
 
 #classic (right censored, but work on time since inclusion)
-#sv0 <- Surv(surv2.wnnd$AGE2 - surv2.wnnd$AGE, surv2.wnnd$DEM)
+sv0 <- Surv(surv2.wnnd$AGE2 - surv2.wnnd$AGE, surv2.wnnd$DEM)
+stime   <-  surv2.wnnd$AGE2 - surv2.wnnd$AGE
+sstatus <- surv2.wnnd$DEM
 
 #adjusted only for APOE4 status
 f0 <- paste("sv0 ~ eval(APOE4>0)*1 + eval(AGE-mean(AGE,na.rm=T)) + strata(DX) + ", confound)
@@ -91,5 +98,31 @@ clin_conv <- c(base_score[2,4], full_score[2,4], simple_score[2,4])
 names(clin_conv) <- c(paste(score.use, " (", c("Base","APOE"),")",sep=""),"APOEe44")
 
 print(clin_conv)
+
+
+
+#predictive regression analysis
+my.forms <- c(f0, f1, f2, g0, g1)
+names(my.forms) <- c("f0", "f1", "f2", "g0", "g1")
+
+dummy.data <- data.frame(surv2.wnnd, sv0 )
+
+#do for each setting
+mycv <- lapply(my.forms, function(x){
+  message(x)
+  ttt <- formula2cv(x, dummy.data, "sv0", cvset.wnnd, measure="surv")
+  #compute concordance
+  cind <- sapply(sort(unique(cvset.wnnd)), function(i){
+    concordance.index(ttt$prediction[[i]], stime[cvset.wnnd == i], sstatus[cvset.wnnd==i])$c.index
+  })
+  ttt[["metrics"]] <- cind
+  return(ttt)
+})
+
+perf.xxx <- cvsummary(mycv)
+colnames(perf.xxx) <-  c("mean","sd","p")
+#pred.mod <<- cbind(pred.mod, perf.xxx)
+rownames(perf.xxx) <- c("Base", paste(score.use, "(Base)"), "APOEe44", "(APOE)", paste(score.use, "(APOE)"))
+print(perf.xxx)
 
 ### end conversion analysis ###
