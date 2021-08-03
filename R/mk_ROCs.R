@@ -49,3 +49,19 @@ for(grp in setdiff(grps, "HCALL")){
   abline(a=0,b=1, col="grey", lwd=1, lty=2)
   legend(0.55, 0.35, c("status","burden", paste("+",s)), lwd=1, lty=c(2,1,1), col=mycolors[c("null","null",s)], bty="n")
 }
+
+
+if (0){
+    tiff("/tmp/ROC_grabs.tiff", height=6, width=6, res=600, units='in')
+    grp <- "HCAD"
+    plot(ROC_curves[[paste(grp, "PHS","g0",sep="_")]], avg="vertical", lwd=5, col=mycolors["null"], main=grptr[grp], axes=F)
+    #plot(ROC_curves[[paste(grp, "PHS","f0",sep="_")]], avg="vertical", lwd=5, lty=2, col=mycolors["null"], add=T)
+    for (s in pr.scores){
+      plot(ROC_curves[[paste(grp,s,"g1", sep="_")]], avg="vertical", lwd=5, col=mycolors[s], add=T)
+    }
+    abline(a=0,b=1, col="grey", lwd=4, lty=2)
+    #legend(0.45, 0.5, c("burden", paste("+",prstr[pr.scores])), lwd=1, lty=1, col=mycolors[c("null",pr.scores)], bty="n")
+    axis(side=1, lwd=4)
+    axis(side=2, lwd=4)
+    dev.off()
+}

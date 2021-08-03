@@ -5,6 +5,11 @@ source("./initialize.R")
 #ROI used for normalization of PET intensities
 norm <- "WHOLECEREBELLUM_SUVR"
 
+#for the machine learning bit:
+n_fold <- 10
+set.seed(31415)
+
+
 #select a subset of the data with amyloid image at any visit
 amybase <- subset(adnimerge, subset=!is.na(AV45))
 tmp <- unique(amybase$RID)
@@ -42,6 +47,10 @@ summed <- amydata2.wn[,target.rois.lh] + amydata2.wn[,target.rois.rh]
 colnames(summed) <- lbase
 amydata2.wn <- data.frame(amydata2.wn, summed)
 
+#for machine learning
+cvset.amy  <- getCVfold(amydata2.wn, n_fold)
+pred.mod <- c()
+
 target.rois <- c("COMPOSITE_SUVR", setdiff(lbase,"UNKNOWN_SUVR"))
 
 #run the model for every ROI (and the composite)
@@ -69,6 +78,21 @@ av45.full <- t(sapply(target.rois, function(roi){
 
   full_score <- anova(n0, n1)[2,6]
   full_meta <- metaAnalyze(amydata2.wn, g1, c("CN","MCI","Dementia"), paste("scale(", score.use,")",sep=""))
+
+  #predictive regression analysis
+  my.forms <- c(f0, f1, f2, g0, g1)
+  names(my.forms) <- c("f0", "f1", "f2", "g0", "g1")
+
+  bmark <- amydata2.wn[,roi] / amydata2.wn[,norm]
+  dummy.data <- data.frame(amydata2.wn, bmark)
+
+  #do for each setting
+  mycv <- lapply(my.forms, function(x){
+    ttt <- formula2cv(x, dummy.data, "bmark", cvset.amy, my.fam=gaussian(), measure="cor")
+  })
+  perf.xxx <- cvsummary(mycv)
+  colnames(perf.xxx) <- paste(roi, c("mean","sd","p"))
+  pred.mod <<- cbind(pred.mod, perf.xxx)
 
   return(c(base_score, full_score, simple_score, full_meta[4,4]))
 }))

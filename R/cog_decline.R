@@ -2,9 +2,9 @@ source("./initialize.R")
 require(lme4)
 
 #Only random intercept
-mc <- "(1 | RID)"
+#mc <- "(1 | RID)"
 #Random intercept and slope
-#mc <- "(1 + Years.bl | RID)"
+mc <- "(1 + Years.bl | RID)"
 
 #set target variables
 target.vars <- c("CDRSB","ADNI_MEM","ADNI_EF")
@@ -58,11 +58,14 @@ cog.nd <- sapply(target.vars, function(tar){
   simple_score <- anova(m0, m1)[2,8]
 
   #use the adjustment for full APOE4 locus
-  p0 <- paste( "eval(", tar, "-", tbl, ")", "~ ", score.use," + ( AGE +", confound," + eval(Entorhinal.bl) + eval(FRONTAL_SUVR/WHOLECEREBELLUM_SUVR) + APOE4 + rs7412) * Years.bl")
+  p0 <- paste( "eval(", tar, "-", tbl, ")", "~ ", score.use," + ( AGE +", confound," + eval(Entorhinal.bl) + eval(FRONTAL_SUVR/WHOLECEREBELLUM_SUVR)) + (APOE4 + rs7412) * Years.bl")
   p1 <- paste(p0, " + ", score.use,":Years.bl", sep="")
   m0 <- lmer(as.formula(paste(p0, "+", mc)), data=cogdata2)
   m1 <- lmer(as.formula(paste(p1, "+", mc)), data=cogdata2)
   full_score <- anova(m0, m1)[2,8]
+
+  print(p1)
+  print(summary(m1))
 
   return(c(base_score_1, base_score_2, full_score, simple_score))
 })

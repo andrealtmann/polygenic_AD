@@ -120,6 +120,21 @@ formula2cv <- function(my.formula, dat, lab, cv.set, my.fam, measure="auc", ...)
 
 }
 
+#run trained model on training data
+formula2tt <- function(my.formula, dat, lab, my.fam, measure="auc",...){
+
+  xmat   <- model.matrix(as.formula(my.formula), dat)
+  xmat   <- xmat[,2:ncol(xmat)]
+
+  y <- dat[,lab]
+  tmod <- glm( y ~ ., family=my.fam, data=as.data.frame(xmat))
+  pred <- predict(tmod, newdata=as.data.frame(xmat), type="response")
+
+  res <- unlist(performance(prediction(pred, y),'auc')@y.values)
+  return(res)
+
+}
+
 cvres2entry <- function(res1, res2=NA){
 
   mmm <- mean(res1$metrics)
